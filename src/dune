@@ -1,5 +1,6 @@
 (library
   (name stubs)
+  (public_name ceph.stubs)
   (wrapped false)
   (modules stubs)
   (libraries
@@ -31,6 +32,7 @@
 
 (library
   (name ceph)
+  (public_name ceph)
   (modules :standard \ gen stubs)
   (libraries
     ctypes
