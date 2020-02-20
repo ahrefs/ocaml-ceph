@@ -1,0 +1,41 @@
+(library
+  (name stubs)
+  (wrapped false)
+  (modules stubs)
+  (libraries
+    ctypes
+  )
+)
+
+(executable
+  (name gen)
+  (modules gen)
+  (libraries
+    ctypes
+    ctypes.stubs
+    stubs
+  )
+)
+
+(rule
+  (targets "generated.ml")
+  (action (with-stdout-to %{targets} (run ./gen.exe ml)))
+  (deps gen.exe)
+)
+
+(rule
+  (targets "generated.c")
+  (action (with-stdout-to %{targets} (run ./gen.exe c)))
+  (deps gen.exe)
+)
+
+(library
+  (name ceph)
+  (modules :standard \ gen stubs)
+  (libraries
+    ctypes
+    stubs
+  )
+  (c_names generated)
+  (c_library_flags -lcephfs)
+)
