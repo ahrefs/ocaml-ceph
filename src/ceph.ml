@@ -50,3 +50,19 @@ let rename mi ~from ~target = check "rename" @@ C.rename mi from target
 let chmod = check3 "chmod" C.chmod
 let chown mi path ~uid ~gid = check "chown" @@ C.chown mi path uid gid
 let lchown mi path ~uid ~gid = check "lchown" @@ C.lchown mi path uid gid
+let opendir mi path =
+  let dir = allocate C.dir_result (from_voidp C.struct_dir_result null) in
+  check "opendir" @@ C.opendir mi path dir;
+  !@dir
+let closedir = check2 "closedir" C.closedir
+
+module Dirent = struct
+let typ d = Char.code @@ getf !@d C.d_type
+let inode d = getf !@d C.d_inode
+let name d = coerce (ptr char) string (d |-> C.d_name)
+end
+type dirent = { inode : int64; typ : int; name : string; }
+let readdir mi dir =
+  match C.readdir mi dir with
+  | None -> None
+  | Some d -> Some Dirent.{ inode = inode d; typ = typ d; name = name d }

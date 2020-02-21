@@ -7,9 +7,23 @@ struct
 
   let version = foreign "ceph_version" @@ ptr int @-> ptr int @-> ptr int @-> returning string
 
-  type struct_mount_info = [`Mount_info] structure
-  let struct_mount_info : struct_mount_info typ = structure "ceph_mount_info"
+  type mount_info
+  let struct_mount_info : mount_info structure typ = structure "ceph_mount_info"
   let handle = ptr struct_mount_info
+
+  type dir_result
+  let struct_dir_result : dir_result structure typ = structure "ceph_dir_result"
+  let dir_result = ptr struct_dir_result
+
+  type dirent
+  let struct_dirent : dirent structure typ = structure "dirent"
+  let ( -: ) ty label = field struct_dirent label ty
+  let d_inode  = int64_t -: "d_ino" (* could use PosixTypes.ino_t but libcephfs explicitly requires int64 *)
+  let d_off    = int64_t -: "d_off"
+  let d_reclen = short   -: "d_reclen"
+  let d_type   = char    -: "d_type"
+  let d_name   = char    -: "d_name" (* char d_name[] *)
+  let () = seal struct_dirent
 
   let create = foreign "ceph_create" @@ ptr handle @-> string_opt @-> returning int
   let release = foreign "ceph_release" @@ handle @-> returning int
@@ -36,5 +50,9 @@ struct
   let chmod = foreign "ceph_chmod" @@ handle @-> string @-> int @-> returning int
   let chown = foreign "ceph_chown" @@ handle @-> string @-> int @-> int @-> returning int
   let lchown = foreign "ceph_lchown" @@ handle @-> string @-> int @-> int @-> returning int
+
+  let opendir = foreign "ceph_opendir" @@ handle @-> string @-> ptr dir_result @-> returning int
+  let closedir = foreign "ceph_closedir" @@ handle @-> dir_result @-> returning int
+  let readdir = foreign "ceph_readdir" @@ handle @-> dir_result @-> returning (ptr_opt struct_dirent)
 
 end
