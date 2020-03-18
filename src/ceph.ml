@@ -1,6 +1,7 @@
 open Ctypes
 
-module C = Stubs.Bindings(Generated)
+module C = Bindings.C(Generated)
+module S = Structs.C(Structs_generated)
 
 exception Error of (string * int)
 
@@ -15,6 +16,8 @@ let check func ret =
 let check1 func f = fun a1 -> check func (f a1)
 let check2 func f = fun a1 a2 -> check func (f a1 a2)
 let check3 func f = fun a1 a2 a3 -> check func (f a1 a2 a3)
+
+type t = C.mount_info Ctypes.structure Ctypes_static.ptr
 
 let version () =
   let major = allocate int 0 in
@@ -56,12 +59,38 @@ let opendir mi path =
   !@dir
 let closedir = check2 "closedir" C.closedir
 
+type file_type =
+  | BLK  (** This is a block device. *)
+  | CHR  (** This is a character device. *)
+  | DIR  (** This is a directory. *)
+  | FIFO (** This is a named pipe (FIFO). *)
+  | LNK  (** This is a symbolic link. *)
+  | REG  (** This is a regular file. *)
+  | SOCK (** This is a UNIX domain socket. *)
+  | UNKNOWN (** The file type could not be determined. *)
+
 module Dirent = struct
-let typ d = Char.code @@ getf !@d C.d_type
+
+let typ d =
+  let open S in
+  let c = getf !@d C.d_type in
+  if c = dt_BLK then BLK
+  else if c = dt_REG then REG
+  else if c = dt_DIR then DIR
+  else if c = dt_CHR then CHR
+  else if c = dt_FIFO then FIFO
+  else if c = dt_LNK then LNK
+  else if c = dt_SOCK then SOCK
+  else if c = dt_UNKNOWN then UNKNOWN
+  else UNKNOWN
+
 let inode d = getf !@d C.d_inode
 let name d = coerce (ptr char) string (d |-> C.d_name)
+
 end
-type dirent = { inode : int64; typ : int; name : string; }
+
+type dirent = { inode : int64; typ : file_type; name : string; }
+
 let readdir mi dir =
   match C.readdir mi dir with
   | None -> None

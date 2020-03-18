@@ -1,3 +1,2 @@
-(lang dune 1.10)
+(lang dune 2.0)
 (name ceph)
-(implicit_transitive_deps false)

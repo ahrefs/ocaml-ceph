@@ -2,7 +2,7 @@
   (name stubs)
   (public_name ceph.stubs)
   (wrapped false)
-  (modules stubs)
+  (modules bindings structs)
   (libraries
     ctypes
   )
@@ -20,24 +20,44 @@
 
 (rule
   (targets "generated.ml")
-  (action (with-stdout-to %{targets} (run ./gen.exe ml)))
+  (action (with-stdout-to %{targets} (run ./gen.exe bindings ml)))
   (deps gen.exe)
 )
 
 (rule
   (targets "generated.c")
-  (action (with-stdout-to %{targets} (run ./gen.exe c)))
+  (action (with-stdout-to %{targets} (run ./gen.exe bindings c)))
   (deps gen.exe)
+)
+
+(rule
+  (targets "gen_structs.c")
+  (action (with-stdout-to %{targets} (run ./gen.exe structs c)))
+  (deps gen.exe)
+)
+
+(executable
+  (name gen_structs)
+  (modules gen_structs)
+  (foreign_stubs (language c) (names gen_structs))
+  (libraries ctypes)
+)
+
+(rule
+  (targets "structs_generated.ml")
+  (action (with-stdout-to %{targets} (run ./gen_structs.exe)))
+  (deps gen_structs.exe)
 )
 
 (library
   (name ceph)
   (public_name ceph)
-  (modules :standard \ gen stubs)
+  (modules :standard \ gen bindings structs gen_structs)
   (libraries
     ctypes
     stubs
   )
-  (c_names generated)
+  (flags :standard -w -9-27)
+  (foreign_stubs (language c) (names generated))
   (c_library_flags -lcephfs)
 )
