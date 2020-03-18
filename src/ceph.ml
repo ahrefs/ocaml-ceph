@@ -18,6 +18,7 @@ let check2 func f = fun a1 a2 -> check func (f a1 a2)
 let check3 func f = fun a1 a2 a3 -> check func (f a1 a2 a3)
 
 type t = C.mount_info Ctypes.structure Ctypes_static.ptr
+type fd = int
 
 let version () =
   let major = allocate int 0 in
@@ -95,3 +96,27 @@ let readdir mi dir =
   match C.readdir mi dir with
   | None -> None
   | Some d -> Some Dirent.{ inode = inode d; typ = typ d; name = name d }
+
+type open_flag = O_RDONLY | O_WRONLY | O_RDWR |O_CREAT | O_EXCL | O_TRUNC | O_DIRECTORY | O_NOFOLLOW
+
+let int_of_open_flag = let open S in function
+| O_RDONLY -> o_RDONLY
+| O_WRONLY -> o_WRONLY
+| O_RDWR -> o_RDWR
+| O_CREAT -> o_CREAT
+| O_EXCL -> o_EXCL
+| O_TRUNC -> o_TRUNC
+| O_DIRECTORY -> o_DIRECTORY
+| O_NOFOLLOW -> o_NOFOLLOW
+
+let int_of_open_flags = List.fold_left (fun acc x -> acc lor int_of_open_flag x) 0
+
+let openfile mi path flags mode =
+  let fd = C.openfile mi path (int_of_open_flags flags) mode in
+  if fd < 0 then raise (Error ("open",fd));
+  fd
+
+let close = check2 "close" C.close
+let fallocate mi fd ofs len = check "fallocate" @@ C.fallocate mi fd 0 ofs len
+
+

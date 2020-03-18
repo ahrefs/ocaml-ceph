@@ -12,4 +12,13 @@ module C(T : Cstubs_structs.TYPE) = struct
   let dt_SOCK = constant "DT_SOCK" char (* This is a UNIX domain socket. *)
   let dt_UNKNOWN = constant "DT_UNKNOWN" char (* The file type could not be determined. *)
 
+  let o_RDONLY = constant "O_RDONLY" int
+  let o_WRONLY = constant "O_WRONLY" int
+  let o_RDWR = constant "O_RDWR" int
+  let o_CREAT = constant "O_CREAT" int
+  let o_EXCL = constant "O_EXCL" int
+  let o_TRUNC = constant "O_TRUNC" int
+  let o_DIRECTORY = constant "O_DIRECTORY" int
+  let o_NOFOLLOW = constant "O_NOFOLLOW" int
+
 end

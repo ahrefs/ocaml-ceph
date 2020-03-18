@@ -10,6 +10,8 @@ struct
   let struct_mount_info : mount_info structure typ = structure "ceph_mount_info"
   let handle = ptr struct_mount_info
 
+  let fd = int
+
   type dir_result
   let struct_dir_result : dir_result structure typ = structure "ceph_dir_result"
   let dir_result = ptr struct_dir_result
@@ -53,5 +55,9 @@ struct
   let opendir = foreign "ceph_opendir" @@ handle @-> string @-> ptr dir_result @-> returning int
   let closedir = foreign "ceph_closedir" @@ handle @-> dir_result @-> returning int
   let readdir = foreign "ceph_readdir" @@ handle @-> dir_result @-> returning (ptr_opt struct_dirent)
+
+  let openfile = foreign "ceph_open" @@ handle @-> string @-> int @-> int @-> returning fd
+  let close = foreign "ceph_close" @@ handle @-> fd @-> returning int
+  let fallocate = foreign "ceph_fallocate" @@ handle @-> fd @-> int @-> int64_t @-> int64_t @-> returning int
 
 end
