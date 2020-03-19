@@ -1,5 +1,7 @@
 open Ctypes
 
+module S = Structs.C(Structs_generated)
+
 module C(F : Cstubs.FOREIGN) =
 struct
   open F
@@ -15,16 +17,6 @@ struct
   type dir_result
   let struct_dir_result : dir_result structure typ = structure "ceph_dir_result"
   let dir_result = ptr struct_dir_result
-
-  type dirent
-  let struct_dirent : dirent structure typ = structure "dirent"
-  let ( -: ) ty label = field struct_dirent label ty
-  let d_inode  = int64_t -: "d_ino" (* could use PosixTypes.ino_t but libcephfs explicitly requires int64 *)
-  let d_off    = int64_t -: "d_off"
-  let d_reclen = short   -: "d_reclen"
-  let d_type   = char    -: "d_type"
-  let d_name   = char    -: "d_name" (* char d_name[] *)
-  let () = seal struct_dirent
 
   let create = foreign "ceph_create" @@ ptr handle @-> string_opt @-> returning int
   let release = foreign "ceph_release" @@ handle @-> returning int
@@ -54,10 +46,16 @@ struct
 
   let opendir = foreign "ceph_opendir" @@ handle @-> string @-> ptr dir_result @-> returning int
   let closedir = foreign "ceph_closedir" @@ handle @-> dir_result @-> returning int
-  let readdir = foreign "ceph_readdir" @@ handle @-> dir_result @-> returning (ptr_opt struct_dirent)
+  let readdir = foreign "ceph_readdir" @@ handle @-> dir_result @-> returning (ptr_opt S.struct_dirent)
+  let readdirplus = foreign "ceph_readdirplus_r" @@
+    handle @-> dir_result @-> ptr S.struct_dirent @-> ptr S.struct_statx @-> uint @-> uint @-> ptr void @-> returning int
 
   let openfile = foreign "ceph_open" @@ handle @-> string @-> int @-> int @-> returning fd
   let close = foreign "ceph_close" @@ handle @-> fd @-> returning int
   let fallocate = foreign "ceph_fallocate" @@ handle @-> fd @-> int @-> int64_t @-> int64_t @-> returning int
+  let fsync = foreign "ceph_fsync" @@ handle @-> fd @-> int @-> returning int
+
+  let statx = foreign "ceph_statx" @@ handle @-> string @-> ptr S.struct_statx @-> uint @-> uint @-> returning int
+  let fstatx = foreign "ceph_fstatx" @@ handle @-> fd @-> ptr S.struct_statx @-> uint @-> uint @-> returning int
 
 end

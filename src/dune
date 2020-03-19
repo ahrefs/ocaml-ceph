@@ -1,39 +1,23 @@
+; generate data types via Cstubs_structs
+
 (library
-  (name stubs)
-  (public_name ceph.stubs)
+  (name structs)
+  (public_name ceph.structs)
   (wrapped false)
-  (modules bindings structs)
-  (libraries
-    ctypes
-  )
+  (modules structs)
+  (libraries ctypes)
 )
 
 (executable
-  (name gen)
-  (modules gen)
-  (libraries
-    ctypes
-    ctypes.stubs
-    stubs
-  )
-)
-
-(rule
-  (targets "generated.ml")
-  (action (with-stdout-to %{targets} (run ./gen.exe bindings ml)))
-  (deps gen.exe)
-)
-
-(rule
-  (targets "generated.c")
-  (action (with-stdout-to %{targets} (run ./gen.exe bindings c)))
-  (deps gen.exe)
+  (name gen_structs_c)
+  (modules gen_structs_c)
+  (libraries ctypes ctypes.stubs structs)
 )
 
 (rule
   (targets "gen_structs.c")
-  (action (with-stdout-to %{targets} (run ./gen.exe structs c)))
-  (deps gen.exe)
+  (action (with-stdout-to %{targets} (run ./gen_structs_c.exe)))
+  (deps gen_structs_c.exe)
 )
 
 (executable
@@ -49,15 +33,52 @@
   (deps gen_structs.exe)
 )
 
+; generate functions
+
+(library
+  (name stubs)
+  (public_name ceph.stubs)
+  (wrapped false)
+  (modules bindings structs_generated)
+  (flags :standard -w -9-27)
+  (libraries
+    ctypes
+    structs
+  )
+)
+
+(executable
+  (name gen)
+  (modules gen)
+  (libraries
+    ctypes
+    ctypes.stubs
+    stubs
+  )
+)
+
+(rule
+  (targets "generated.ml")
+  (action (with-stdout-to %{targets} (run ./gen.exe ml)))
+  (deps gen.exe)
+)
+
+(rule
+  (targets "generated.c")
+  (action (with-stdout-to %{targets} (run ./gen.exe c)))
+  (deps gen.exe)
+)
+
+; public library
+
 (library
   (name ceph)
   (public_name ceph)
-  (modules :standard \ gen bindings structs gen_structs)
+  (modules :standard \ gen bindings structs gen_structs gen_structs_c structs_generated)
   (libraries
     ctypes
     stubs
   )
-  (flags :standard -w -9-27)
   (foreign_stubs (language c) (names generated))
   (c_library_flags -lcephfs)
 )
